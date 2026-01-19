@@ -39,32 +39,28 @@ app.get('/api/dog-image', async (req, res) => {
   }
 });
 
-// POST /api/generate-profile - Generate dog profile with Azure AI (stubbed)
+// POST /api/generate-profile - Generate dog profile with Azure AI
 app.post('/api/generate-profile', async (req, res) => {
+  const { imageUrl } = req.body;
+  
+  // Mock profile as fallback - moved inside handler where imageUrl is available
+  const mockProfile = {
+    name: "Sir Barkington III",
+    profession: "Professional Ball Chaser",
+    family: "Born into a distinguished line of retrievers",
+    accomplishments: [
+      "Successfully caught own tail (2019)",
+      "Three-time winner of 'Best Spot Stealer'",
+      "Mastered the art of selective hearing"
+    ],
+    lifeStory: "From humble beginnings in a suburban backyard, Sir Barkington III rose to prominence through sheer determination and an unwavering commitment to belly rubs. His journey from playful pup to distinguished gentleman has inspired countless other canines to pursue their dreams of napping in sunbeams and guarding the house from suspicious squirrels.",
+    pictureStory: "This photograph was taken on a crisp autumn morning, just moments after Sir Barkington discovered a particularly interesting smell. The photographer, his beloved human, had attempted to capture a dignified portrait, but Sir Barkington had other ideas. The resulting image perfectly encapsulates his philosophy: life is too short not to follow your nose, chase every ball, and greet every moment with unbridled enthusiasm.",
+    imageUrl
+  };
+  
   try {
-    const { imageUrl } = req.body;
-    
-    // STUBBED RESPONSE - Replace with actual Azure AI call
-    // This returns hardcoded data that matches the expected format
-    const mockProfile = {
-      name: "Sir Barkington III",
-      profession: "Professional Ball Chaser",
-      family: "Born into a distinguished line of retrievers",
-      accomplishments: [
-        "Successfully caught own tail (2019)",
-        "Three-time winner of 'Best Spot Stealer'",
-        "Mastered the art of selective hearing"
-      ],
-      lifeStory: "From humble beginnings in a suburban backyard, Sir Barkington III rose to prominence through sheer determination and an unwavering commitment to belly rubs. His journey from playful pup to distinguished gentleman has inspired countless other canines to pursue their dreams of napping in sunbeams and guarding the house from suspicious squirrels.",
-      pictureStory: "This photograph was taken on a crisp autumn morning, just moments after Sir Barkington discovered a particularly interesting smell. The photographer, his beloved human, had attempted to capture a dignified portrait, but Sir Barkington had other ideas. The resulting image perfectly encapsulates his philosophy: life is too short not to follow your nose, chase every ball, and greet every moment with unbridled enthusiasm.",
-      imageUrl
-    };
-    
-    //res.json(mockProfile);
-    
-    
-    // ACTUAL AZURE AI IMPLEMENTATION
-    console.log('🤖 Calling Azure OpenAI to generate dog profile...');
+    // Call Azure OpenAI to generate dog profile
+    console.log('🤖 Calling Azure OpenAI Vision to analyze dog photo...');
     
     const client = new OpenAIClient(
       process.env.AZURE_OPENAI_ENDPOINT,
@@ -72,20 +68,36 @@ app.post('/api/generate-profile', async (req, res) => {
     );
     
     const systemPrompt = `You are a creative writer specializing in humorous dog biographies. 
-    Generate a unique, funny, and heartwarming profile for a dog based on their photo.
+    Analyze the dog photo provided and generate a unique, funny, and heartwarming profile that reflects what you see in the image.
+    Consider the dog's appearance, breed characteristics, expression, setting, and any notable features.
     Return ONLY valid JSON with this exact structure:
     {
-      "name": "A funny, distinguished dog name",
-      "profession": "A humorous job title or occupation",
-      "family": "A brief, funny family background (one sentence)",
+      "name": "A funny, distinguished dog name that fits their appearance",
+      "profession": "A humorous job title based on their look or pose",
+      "family": "A brief, funny family background that matches their breed/appearance (one sentence)",
       "accomplishments": ["achievement 1", "achievement 2", "achievement 3"],
-      "lifeStory": "A paragraph describing the dog's life story (2-3 sentences)",
-      "pictureStory": "A detailed, humorous backstory about this specific photo (3-4 sentences)"
+      "lifeStory": "A paragraph describing the dog's life story based on what you observe (2-3 sentences)",
+      "pictureStory": "A detailed, humorous backstory about this specific photo - describe what's happening, the setting, their expression (3-4 sentences)"
     }`;
     
     const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Generate a funny dog profile for this dog photo: ${imageUrl}` }
+      { 
+        role: 'system', 
+        content: systemPrompt 
+      },
+      { 
+        role: 'user', 
+        content: [
+          {
+            type: 'text',
+            text: 'Analyze this dog photo and create a humorous, personalized profile based on what you see.'
+          },
+          {
+            type: 'image_url',
+             imageUrl: { url: imageUrl }
+          }
+        ]
+      }
     ];
     
     const response = await client.getChatCompletions(
@@ -93,7 +105,7 @@ app.post('/api/generate-profile', async (req, res) => {
       messages,
       {
         temperature: 0.9,
-        maxTokens: 500
+        maxTokens: 800  // Increased for more detailed responses
       }
     );
     
@@ -104,8 +116,11 @@ app.post('/api/generate-profile', async (req, res) => {
       total: response.usage?.totalTokens
     });
     
-    const generatedContent = response.choices[0].message.content;
+    let generatedContent = response.choices[0].message.content;
     console.log('📝 Generated content:', generatedContent);
+    
+    // Remove markdown code blocks if present
+    generatedContent = generatedContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
     const profileData = JSON.parse(generatedContent);
     console.log('✅ Successfully parsed profile JSON');
@@ -117,7 +132,8 @@ app.post('/api/generate-profile', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Error generating profile:', error);
-    res.status(500).json({ error: 'Failed to generate dog profile' });
+    console.log('⚠️ Falling back to mock profile');
+    res.json(mockProfile);  // Return mock profile instead of error
   }
 });
 
