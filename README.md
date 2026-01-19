@@ -59,13 +59,7 @@ npm start
 
 Check out the original Figma design: [Dog Profile Generator](https://www.figma.com/design/z0AQ0RUJakz5pYRluGLNr3/Dog-Profile-Generator)
 
-## 🤝 Contributing
 
-Got ideas to make this project even more tail-waggingly awesome? Feel free to contribute!
-
-## 📄 License
-
-[Add your license here]
 
 ---
 

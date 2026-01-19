@@ -83,7 +83,7 @@ export function DogProfile() {
                 {loading ? (
                   <>
                     <RefreshCw className="mr-2 size-4 animate-spin" />
-                    unleashing
+                    Unleashing...
                   </>
                 ) : (
                   "Unleash new story"
