@@ -193,11 +193,24 @@ export function DogProfile() {
             {/* Image Section */}
             <Card className="overflow-hidden border-none shadow-sm rounded-2xl bg-white">
               <div className="relative">
-                <img
-                  src={dogData.imageUrl}
-                  alt={dogData.name}
-                  className="w-full h-[600px] object-cover"
-                />
+                {/* Preserve box size; fit full image and fill leftover space */}
+                <div className="relative overflow-hidden h-[600px] w-full">
+                  {/* Obfuscated background version fills the container */}
+                  <img
+                    src={dogData.imageUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover blur-md brightness-90 saturate-50"
+                  />
+                  {/* Foreground image remains fully visible without cropping */}
+                  <div className="relative flex items-center justify-center h-full w-full p-4">
+                    <img
+                      src={dogData.imageUrl}
+                      alt={dogData.name}
+                      className="w-full h-full object-contain drop-shadow-md"
+                    />
+                  </div>
+                </div>
               </div>
               
               {/* Picture Story */}

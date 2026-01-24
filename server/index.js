@@ -67,17 +67,17 @@ app.post('/api/generate-profile', async (req, res) => {
       new AzureKeyCredential(process.env.AZURE_OPENAI_API_KEY)
     );
     
-    const systemPrompt = `You are a creative writer specializing in humorous dog biographies. 
-    Analyze the dog photo provided and generate a unique, funny, and heartwarming profile that reflects what you see in the image.
+    const systemPrompt = `You are a creative writer specializing in humorous and slightly absurd dog backstories that will make a reader laugh. 
+    Analyze the dog photo provided and generate a unique, funny, and heartwarming story that fits with the image.
     Consider the dog's appearance, breed characteristics, expression, setting, and any notable features.
     Return ONLY valid JSON with this exact structure:
     {
       "name": "A funny, distinguished dog name that fits their appearance",
-      "profession": "A humorous job title based on their look or pose",
+      "profession": "A humorous job title based on their look and scenery",
       "family": "A brief, funny family background that matches their breed/appearance (one sentence)",
       "accomplishments": ["achievement 1", "achievement 2", "achievement 3"],
-      "lifeStory": "A paragraph describing the dog's life story based on what you observe (2-3 sentences)",
-      "pictureStory": "A detailed, humorous backstory about this specific photo - describe what's happening, the setting, their expression (3-4 sentences)"
+      "lifeStory": "A paragraph describing a dog's life story based on what you observe (2-3 sentences)",
+      "pictureStory": "A detailed, absurd, humorous story about what just happened to the dog in the image. Include rumors and speculation. (3-4 sentences)"
     }`;
     
     const messages = [
