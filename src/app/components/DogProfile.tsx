@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/app/components/ui/alert";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import logoIcon from "@/assets/DogDiaries_Logo.png";
+import { checkProfileExists, saveProfile, unsaveProfile } from "@/app/services/api";
 
 interface DogData {
   name: string;
@@ -15,10 +16,16 @@ interface DogData {
   imageUrl: string;
 }
 
-export function DogProfile() {
+type DogProfileProps = {
+  onNavigateSaved?: () => void;
+};
+
+export function DogProfile({ onNavigateSaved }: DogProfileProps) {
   const [dogData, setDogData] = useState<DogData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [exists, setExists] = useState<{ exists: boolean; id?: string }>({ exists: false });
 
   const generateProfile = async () => {
     setLoading(true);
@@ -59,6 +66,19 @@ export function DogProfile() {
     }
   };
 
+  // Check if current profile is saved
+  useEffect(() => {
+    const run = async () => {
+      if (!dogData) {
+        setExists({ exists: false });
+        return;
+      }
+      const res = await checkProfileExists({ imageUrl: dogData.imageUrl, name: dogData.name });
+      setExists(res);
+    };
+    run();
+  }, [dogData]);
+
   return (
     <div className="min-h-screen bg-[#e8dcc8] relative">
       {/* Header Navigation */}
@@ -73,7 +93,13 @@ export function DogProfile() {
               The Dog Diaries
             </h1>
           </div>
-          <nav className="flex items-center gap-8">
+          <nav className="flex items-center gap-4">
+            <Button
+              onClick={() => onNavigateSaved && onNavigateSaved()}
+              className="bg-white text-amber-900 border border-amber-900 rounded-none h-9 px-4"
+            >
+              Saved Tails
+            </Button>
             {dogData && (
               <Button
                 onClick={generateProfile}
@@ -262,6 +288,49 @@ export function DogProfile() {
                   <p className="text-xs text-gray-500 leading-relaxed">
                     This profile is a work of fiction created for entertainment purposes. Any resemblance to actual dogs, living or departed, is purely coincidental.
                   </p>
+                </div>
+
+                {/* Save/Unsave Button */}
+                <div className="pt-8 border-t border-gray-200">
+                  <Button
+                    disabled={saving}
+                    className="bg-amber-900 hover:bg-amber-800 text-white rounded-none h-9 px-4"
+                    onClick={async () => {
+                      if (!dogData) return;
+                      setSaving(true);
+                      try {
+                        if (exists.exists && exists.id) {
+                          const ok = await unsaveProfile(exists.id);
+                          if (ok) {
+                            setExists({ exists: false });
+                            alert('Profile unsaved.');
+                          } else {
+                            alert('Failed to unsave.');
+                          }
+                        } else {
+                          const saved = await saveProfile({
+                            name: dogData.name,
+                            profession: dogData.profession,
+                            family: dogData.family,
+                            accomplishments: dogData.accomplishments,
+                            lifeStory: dogData.lifeStory,
+                            pictureStory: dogData.pictureStory,
+                            imageUrl: dogData.imageUrl,
+                          });
+                          if (saved) {
+                            setExists({ exists: true, id: saved.id });
+                            alert('Profile saved.');
+                          } else {
+                            alert('Failed to save profile.');
+                          }
+                        }
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  >
+                    {exists.exists ? 'Unsave' : 'Save Profile'}
+                  </Button>
                 </div>
               </div>
             </div>

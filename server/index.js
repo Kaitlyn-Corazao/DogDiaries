@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
+import { CosmosClient } from '@azure/cosmos';
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,50 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
+
+// Cosmos DB setup
+const COSMOS_ENDPOINT = process.env.COSMOS_ENDPOINT;
+const COSMOS_KEY = process.env.COSMOS_KEY;
+const COSMOS_DB_NAME = process.env.COSMOS_DB_NAME || 'DogDiaries';
+const COSMOS_CONTAINER = process.env.COSMOS_CONTAINER || 'profiles';
+
+let cosmosContainer = null;
+if (COSMOS_ENDPOINT && COSMOS_KEY) {
+  try {
+    const cosmosClient = new CosmosClient({ endpoint: COSMOS_ENDPOINT, key: COSMOS_KEY });
+    const database = cosmosClient.database(COSMOS_DB_NAME);
+    cosmosContainer = database.container(COSMOS_CONTAINER);
+    console.log('✅ Cosmos DB configured:', { COSMOS_DB_NAME, COSMOS_CONTAINER });
+  } catch (e) {
+    console.error('❌ Failed to configure Cosmos DB:', e);
+  }
+} else {
+  console.warn('⚠️ Cosmos DB not configured. Set COSMOS_ENDPOINT and COSMOS_KEY.');
+}
+
+// GET /api/health - basic service healthcheck
+app.get('/api/health', async (req, res) => {
+  try {
+    let cosmosConnected = false;
+    if (cosmosContainer) {
+      try {
+        // Lightweight ping by reading zero items
+        await cosmosContainer.items.query('SELECT TOP 1 c.id FROM c').fetchNext();
+        cosmosConnected = true;
+      } catch {
+        cosmosConnected = false;
+      }
+    }
+    res.status(200).json({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      cosmos: { connected: cosmosConnected }
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err?.message || 'unknown' });
+  }
+});
 
 // GET /api/dog-image - Fetch random dog image from Dog CEO API
 app.get('/api/dog-image', async (req, res) => {
@@ -134,6 +179,97 @@ app.post('/api/generate-profile', async (req, res) => {
     console.error('❌ Error generating profile:', error);
     console.log('⚠️ Falling back to mock profile');
     res.json(mockProfile);  // Return mock profile instead of error
+  }
+});
+
+// === Saved Profiles API ===
+
+// GET /api/saved-profiles - list with pagination (most recent first)
+app.get('/api/saved-profiles', async (req, res) => {
+  try {
+    if (!cosmosContainer) return res.status(500).json({ error: 'Storage not configured' });
+    const pageSize = Math.min(Math.max(parseInt(req.query.pageSize || '20', 10), 1), 50);
+    const continuationToken = req.query.cursor || undefined;
+    const querySpec = {
+      query: 'SELECT * FROM c ORDER BY c.createdAt DESC',
+      parameters: [],
+    };
+    const { resources, continuationToken: nextToken } = await cosmosContainer.items
+      .query(querySpec, { maxItemCount: pageSize, continuationToken })
+      .fetchNext();
+    res.json({ items: resources || [], nextCursor: nextToken || null });
+  } catch (error) {
+    console.error('Error listing saved profiles:', error);
+    res.status(500).json({ error: 'Failed to list saved profiles' });
+  }
+});
+
+// POST /api/saved-profiles - save a profile
+app.post('/api/saved-profiles', async (req, res) => {
+  try {
+    if (!cosmosContainer) return res.status(500).json({ error: 'Storage not configured' });
+    const {
+      name,
+      profession,
+      family,
+      accomplishments,
+      lifeStory,
+      pictureStory,
+      imageUrl,
+    } = req.body || {};
+
+    // Basic validation
+    if (!name || !profession || !Array.isArray(accomplishments) || accomplishments.length < 1 || !lifeStory || !pictureStory || !imageUrl) {
+      return res.status(400).json({ error: 'Invalid payload' });
+    }
+
+    const id = globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const createdAt = new Date().toISOString();
+    const item = { id, name, profession, family: family || '', accomplishments, lifeStory, pictureStory, imageUrl, createdAt };
+    const { resource } = await cosmosContainer.items.create(item);
+    res.json(resource);
+  } catch (error) {
+    console.error('Error saving profile:', error);
+    res.status(500).json({ error: 'Failed to save profile' });
+  }
+});
+
+// DELETE /api/saved-profiles/:id - unsave a profile by id
+app.delete('/api/saved-profiles/:id', async (req, res) => {
+  try {
+    if (!cosmosContainer) return res.status(500).json({ error: 'Storage not configured' });
+    const id = req.params.id;
+    if (!id) return res.status(400).json({ error: 'Missing id' });
+    await cosmosContainer.item(id, id).delete();
+    res.status(204).send();
+  } catch (error) {
+    if (error.code === 404) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    console.error('Error deleting profile:', error);
+    res.status(500).json({ error: 'Failed to delete profile' });
+  }
+});
+
+// GET /api/saved-profiles/exists - check by imageUrl + name
+app.get('/api/saved-profiles/exists', async (req, res) => {
+  try {
+    if (!cosmosContainer) return res.status(500).json({ error: 'Storage not configured' });
+    const { imageUrl, name } = req.query;
+    if (!imageUrl || !name) return res.status(400).json({ error: 'Missing imageUrl or name' });
+    const querySpec = {
+      query: 'SELECT c.id FROM c WHERE c.imageUrl = @imageUrl AND c.name = @name',
+      parameters: [
+        { name: '@imageUrl', value: String(imageUrl) },
+        { name: '@name', value: String(name) },
+      ],
+    };
+    const { resources } = await cosmosContainer.items.query(querySpec, { maxItemCount: 1 }).fetchNext();
+    const exists = Array.isArray(resources) && resources.length > 0;
+    res.json({ exists, id: exists ? resources[0].id : null });
+  } catch (error) {
+    console.error('Error checking existence:', error);
+    res.status(500).json({ error: 'Failed to check existence' });
   }
 });
 
