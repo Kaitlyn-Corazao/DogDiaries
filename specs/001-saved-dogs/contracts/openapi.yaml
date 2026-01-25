@@ -1,0 +1,144 @@
+openapi: 3.0.3
+info:
+  title: Dog Diaries Saved Profiles API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3001
+paths:
+  /api/saved-profiles:
+    get:
+      summary: List saved profiles
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+          required: false
+      responses:
+        '200':
+          description: List of saved profiles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SavedProfile'
+                  nextCursor:
+                    type: string
+                    nullable: true
+    post:
+      summary: Save a profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveProfileRequest'
+      responses:
+        '200':
+          description: Saved profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedProfile'
+  /api/saved-profiles/{id}:
+    delete:
+      summary: Unsave a profile by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not found
+  /api/saved-profiles/exists:
+    get:
+      summary: Check if a profile is already saved
+      parameters:
+        - in: query
+          name: imageUrl
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Existence check
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+                  id:
+                    type: string
+                    nullable: true
+components:
+  schemas:
+    SavedProfile:
+      type: object
+      required: [id, name, profession, accomplishments, lifeStory, pictureStory, imageUrl, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        profession:
+          type: string
+        family:
+          type: string
+        accomplishments:
+          type: array
+          items:
+            type: string
+        lifeStory:
+          type: string
+        pictureStory:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+    SaveProfileRequest:
+      type: object
+      required: [name, profession, accomplishments, lifeStory, pictureStory, imageUrl]
+      properties:
+        name:
+          type: string
+        profession:
+          type: string
+        family:
+          type: string
+        accomplishments:
+          type: array
+          items:
+            type: string
+        lifeStory:
+          type: string
+        pictureStory:
+          type: string
+        imageUrl:
+          type: string
+          format: uri

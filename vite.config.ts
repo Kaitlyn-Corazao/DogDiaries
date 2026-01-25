@@ -25,5 +25,9 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup/jsdom.ts']
   }
 })

@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/app/components/ui/alert";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import logoIcon from "@/assets/DogDiaries_Logo.png";
+import { checkProfileExists, saveProfile, unsaveProfile } from "@/app/services/api";
+import { toast } from "sonner";
 
 interface DogData {
   name: string;
@@ -15,12 +17,20 @@ interface DogData {
   imageUrl: string;
 }
 
-export function DogProfile() {
+type DogProfileProps = {
+  onNavigateSaved?: () => void;
+};
+
+export function DogProfile({ onNavigateSaved }: DogProfileProps) {
   const [dogData, setDogData] = useState<DogData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [exists, setExists] = useState<{ exists: boolean; id?: string }>({ exists: false });
+  const shouldLogTiming = import.meta.env.DEV;
 
   const generateProfile = async () => {
+    const start = typeof performance !== "undefined" ? performance.now() : 0;
     setLoading(true);
     setError(null);
     
@@ -56,15 +66,34 @@ export function DogProfile() {
       );
     } finally {
       setLoading(false);
+      if (shouldLogTiming && start) {
+        const elapsed = performance.now() - start;
+        console.debug(`Generate profile: ${elapsed.toFixed(1)}ms`);
+      }
     }
   };
+
+  // Check if current profile is saved
+  useEffect(() => {
+    const run = async () => {
+      if (!dogData) {
+        setExists({ exists: false });
+        return;
+      }
+      const res = await checkProfileExists({ imageUrl: dogData.imageUrl, name: dogData.name });
+      setExists(res);
+    };
+    run();
+  }, [dogData]);
 
   return (
     <div className="min-h-screen bg-[#e8dcc8] relative">
       {/* Header Navigation */}
       <header className="border-b border-amber-200 bg-[#faf8f4] relative z-10">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
-          <div 
+          <button
+            type="button"
+            aria-label="Go to home"
             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setDogData(null)}
           >
@@ -72,8 +101,14 @@ export function DogProfile() {
             <h1 className="text-xl tracking-tight text-amber-900">
               The Dog Diaries
             </h1>
-          </div>
-          <nav className="flex items-center gap-8">
+          </button>
+          <nav className="flex items-center gap-4">
+            <Button
+              onClick={() => onNavigateSaved && onNavigateSaved()}
+              className="bg-white text-amber-900 border border-amber-900 rounded-none h-9 px-4 hover:bg-amber-900 hover:text-white"
+            >
+              Saved Tails
+            </Button>
             {dogData && (
               <Button
                 onClick={generateProfile}
@@ -262,6 +297,49 @@ export function DogProfile() {
                   <p className="text-xs text-gray-500 leading-relaxed">
                     This profile is a work of fiction created for entertainment purposes. Any resemblance to actual dogs, living or departed, is purely coincidental.
                   </p>
+                </div>
+
+                {/* Save/Unsave Button */}
+                <div className="pt-8 border-t border-gray-200">
+                  <Button
+                    disabled={saving}
+                    className="bg-amber-900 hover:bg-amber-800 text-white rounded-none h-9 px-4"
+                    onClick={async () => {
+                      if (!dogData) return;
+                      setSaving(true);
+                      try {
+                        if (exists.exists && exists.id) {
+                          const ok = await unsaveProfile(exists.id);
+                          if (ok) {
+                            setExists({ exists: false });
+                            toast.success('Profile unsaved');
+                          } else {
+                            toast.error('Failed to unsave');
+                          }
+                        } else {
+                          const saved = await saveProfile({
+                            name: dogData.name,
+                            profession: dogData.profession,
+                            family: dogData.family,
+                            accomplishments: dogData.accomplishments,
+                            lifeStory: dogData.lifeStory,
+                            pictureStory: dogData.pictureStory,
+                            imageUrl: dogData.imageUrl,
+                          });
+                          if (saved) {
+                            setExists({ exists: true, id: saved.id });
+                            toast.success('Profile saved');
+                          } else {
+                            toast.error('Failed to save');
+                          }
+                        }
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  >
+                    {exists.exists ? 'Remove Tail' : 'Save Tail'}
+                  </Button>
                 </div>
               </div>
             </div>

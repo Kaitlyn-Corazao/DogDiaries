@@ -82,6 +82,7 @@ Original Figma design: https://www.figma.com/design/z0AQ0RUJakz5pYRluGLNr3/Dog-P
 - Uses Express with CORS enabled
 - Environment variables loaded via dotenv
 - Restart required: Use `npm run dev:server` with nodemon for auto-reload
+- Saved profiles paging uses an offset cursor string via `cursor` query param
 
 ## Build & Deployment
 

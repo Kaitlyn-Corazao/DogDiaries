@@ -70,6 +70,9 @@ web_modules/
 .env.*
 !.env.example
 
+# IaC parameter files (do not commit secrets)
+infra/**/parameters.*.json
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

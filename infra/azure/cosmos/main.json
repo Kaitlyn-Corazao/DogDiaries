@@ -1,0 +1,136 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.40.2.10011",
+      "templateHash": "351477862214282233"
+    }
+  },
+  "parameters": {
+    "accountName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "databaseName": {
+      "type": "string",
+      "defaultValue": "DogDiaries"
+    },
+    "containerName": {
+      "type": "string",
+      "defaultValue": "profiles"
+    },
+    "partitionKeyPath": {
+      "type": "string",
+      "defaultValue": "/id"
+    },
+    "enableFreeTier": {
+      "type": "bool",
+      "defaultValue": true
+    },
+    "backupType": {
+      "type": "string",
+      "defaultValue": "Periodic"
+    },
+    "backupIntervalInMinutes": {
+      "type": "int",
+      "defaultValue": 240
+    },
+    "backupRetentionIntervalInHours": {
+      "type": "int",
+      "defaultValue": 168
+    },
+    "backupStorageRedundancy": {
+      "type": "string",
+      "defaultValue": "Geo"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2023-04-15",
+      "name": "[parameters('accountName')]",
+      "location": "[parameters('location')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0,
+            "isZoneRedundant": false
+          }
+        ],
+        "databaseAccountOfferType": "Standard",
+        "enableFreeTier": "[parameters('enableFreeTier')]",
+        "publicNetworkAccess": "Enabled",
+        "backupPolicy": "[if(equals(parameters('backupType'), 'Continuous'), createObject('type', 'Continuous'), createObject('type', 'Periodic', 'periodicModeProperties', createObject('backupIntervalInMinutes', parameters('backupIntervalInMinutes'), 'backupRetentionIntervalInHours', parameters('backupRetentionIntervalInHours'), 'backupStorageRedundancy', parameters('backupStorageRedundancy'))))]",
+        "capabilities": [
+          {
+            "name": "EnableServerless"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', parameters('accountName'), parameters('databaseName'))]",
+      "properties": {
+        "resource": {
+          "id": "[parameters('databaseName')]"
+        },
+        "options": {}
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('accountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', parameters('accountName'), parameters('databaseName'), parameters('containerName'))]",
+      "properties": {
+        "resource": {
+          "id": "[parameters('containerName')]",
+          "partitionKey": {
+            "paths": [
+              "[parameters('partitionKeyPath')]"
+            ],
+            "kind": "Hash"
+          },
+          "indexingPolicy": {
+            "indexingMode": "consistent"
+          }
+        },
+        "options": {}
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('accountName'), parameters('databaseName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "cosmosAccountName": {
+      "type": "string",
+      "value": "[parameters('accountName')]"
+    },
+    "databaseNameOut": {
+      "type": "string",
+      "value": "[parameters('databaseName')]"
+    },
+    "containerNameOut": {
+      "type": "string",
+      "value": "[parameters('containerName')]"
+    },
+    "endpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('accountName')), '2023-04-15').documentEndpoint]"
+    }
+  }
+}
