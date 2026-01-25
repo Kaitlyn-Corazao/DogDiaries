@@ -53,7 +53,7 @@ List profiles (first page):
 curl 'http://localhost:3001/api/saved-profiles?pageSize=20'
 ```
 
-List next page with cursor:
+List next page with cursor (offset string):
 
 ```bash
 curl 'http://localhost:3001/api/saved-profiles?pageSize=20&cursor=NEXT_CURSOR_VALUE'
@@ -95,7 +95,7 @@ This runs `what-if` then deploys the account, database, and container.
 ### Retrieve Endpoint and Keys
 
 ```bash
-./scripts/get-cosmos-keys.sh AITraining dogdiaries-cosmos-dev-001 --write-env
+./scripts/get-cosmos-keys.sh AITraining dogdiaries-cosmos-dev-002 --write-env
 ```
 
 This appends to `.env`:

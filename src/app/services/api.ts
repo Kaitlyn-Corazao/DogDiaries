@@ -17,6 +17,11 @@ export interface SavedProfileList {
 
 const jsonHeaders = { 'Content-Type': 'application/json' } as const;
 
+const parseJson = async <T>(res: Response): Promise<T> => {
+  if (!res.ok) throw new Error(`request failed: ${res.status}`);
+  return await res.json();
+};
+
 export async function checkProfileExists(
   params: { imageUrl: string; name: string }
 ): Promise<{ exists: boolean; id?: string }> {
@@ -25,8 +30,7 @@ export async function checkProfileExists(
       params.imageUrl
     )}&name=${encodeURIComponent(params.name)}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`exists failed: ${res.status}`);
-    return await res.json();
+    return await parseJson(res);
   } catch (e) {
     // Layout-first fallback: assume not saved
     return { exists: false };
@@ -40,8 +44,7 @@ export async function saveProfile(body: Omit<SavedProfile, 'id' | 'createdAt'>):
       headers: jsonHeaders,
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`save failed: ${res.status}`);
-    return await res.json();
+    return await parseJson(res);
   } catch (e) {
     return null;
   }
@@ -65,10 +68,18 @@ export async function listSavedProfiles(
     if (params.cursor) q.set('cursor', params.cursor);
     if (params.pageSize) q.set('pageSize', String(params.pageSize));
     const res = await fetch(`/api/saved-profiles?${q.toString()}`);
-    if (!res.ok) throw new Error(`list failed: ${res.status}`);
-    return await res.json();
+    return await parseJson(res);
   } catch (e) {
     // Layout-first fallback: empty list
     return { items: [], nextCursor: null };
+  }
+}
+
+export async function getSavedProfile(id: string): Promise<SavedProfile | null> {
+  try {
+    const res = await fetch(`/api/saved-profiles/${encodeURIComponent(id)}`);
+    return await parseJson(res);
+  } catch (e) {
+    return null;
   }
 }

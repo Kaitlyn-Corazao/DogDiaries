@@ -5,6 +5,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/app/components/ui/alert";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import logoIcon from "@/assets/DogDiaries_Logo.png";
 import { checkProfileExists, saveProfile, unsaveProfile } from "@/app/services/api";
+import { toast } from "sonner";
 
 interface DogData {
   name: string;
@@ -26,8 +27,10 @@ export function DogProfile({ onNavigateSaved }: DogProfileProps) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [exists, setExists] = useState<{ exists: boolean; id?: string }>({ exists: false });
+  const shouldLogTiming = import.meta.env.DEV;
 
   const generateProfile = async () => {
+    const start = typeof performance !== "undefined" ? performance.now() : 0;
     setLoading(true);
     setError(null);
     
@@ -63,6 +66,10 @@ export function DogProfile({ onNavigateSaved }: DogProfileProps) {
       );
     } finally {
       setLoading(false);
+      if (shouldLogTiming && start) {
+        const elapsed = performance.now() - start;
+        console.debug(`Generate profile: ${elapsed.toFixed(1)}ms`);
+      }
     }
   };
 
@@ -84,7 +91,9 @@ export function DogProfile({ onNavigateSaved }: DogProfileProps) {
       {/* Header Navigation */}
       <header className="border-b border-amber-200 bg-[#faf8f4] relative z-10">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
-          <div 
+          <button
+            type="button"
+            aria-label="Go to home"
             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setDogData(null)}
           >
@@ -92,11 +101,11 @@ export function DogProfile({ onNavigateSaved }: DogProfileProps) {
             <h1 className="text-xl tracking-tight text-amber-900">
               The Dog Diaries
             </h1>
-          </div>
+          </button>
           <nav className="flex items-center gap-4">
             <Button
               onClick={() => onNavigateSaved && onNavigateSaved()}
-              className="bg-white text-amber-900 border border-amber-900 rounded-none h-9 px-4"
+              className="bg-white text-amber-900 border border-amber-900 rounded-none h-9 px-4 hover:bg-amber-900 hover:text-white"
             >
               Saved Tails
             </Button>
@@ -303,9 +312,9 @@ export function DogProfile({ onNavigateSaved }: DogProfileProps) {
                           const ok = await unsaveProfile(exists.id);
                           if (ok) {
                             setExists({ exists: false });
-                            alert('Profile unsaved.');
+                            toast.success('Profile unsaved');
                           } else {
-                            alert('Failed to unsave.');
+                            toast.error('Failed to unsave');
                           }
                         } else {
                           const saved = await saveProfile({
@@ -319,9 +328,9 @@ export function DogProfile({ onNavigateSaved }: DogProfileProps) {
                           });
                           if (saved) {
                             setExists({ exists: true, id: saved.id });
-                            alert('Profile saved.');
+                            toast.success('Profile saved');
                           } else {
-                            alert('Failed to save profile.');
+                            toast.error('Failed to save');
                           }
                         }
                       } finally {
@@ -329,7 +338,7 @@ export function DogProfile({ onNavigateSaved }: DogProfileProps) {
                       }
                     }}
                   >
-                    {exists.exists ? 'Unsave' : 'Save Profile'}
+                    {exists.exists ? 'Remove Tail' : 'Save Tail'}
                   </Button>
                 </div>
               </div>

@@ -19,8 +19,8 @@
 
 **Purpose**: Initialize dependencies, environment, and basic scaffolding
 
-- [ ] T001 Install `@azure/cosmos` dependency in package.json
-- [ ] T002 [P] Create .env with Cosmos config at repo root (COSMOS_ENDPOINT, COSMOS_KEY, COSMOS_DB_NAME, COSMOS_CONTAINER)
+ - [x] T001 Install `@azure/cosmos` dependency in package.json
+ - [x] T002 [P] Create .env with Cosmos config at repo root (COSMOS_ENDPOINT, COSMOS_KEY, COSMOS_DB_NAME, COSMOS_CONTAINER)
 - [ ] T003 [P] Create API helpers file with stubs in src/app/services/api.ts
 - [ ] T004 [P] Create Saved Profiles page component file in src/app/components/SavedProfiles.tsx
 - [ ] T005 Add Saved Profiles route scaffold in src/app/App.tsx
@@ -36,10 +36,12 @@
 
  - [x] T006 Setup saved profiles API routes scaffold (GET list, POST save, DELETE unsave, GET exists) in server/index.js
 - [ ] T007 [P] Add JSDoc typedefs and response shape for `SavedProfile` in server/index.js
+ - [x] T007 [P] Add JSDoc typedefs and response shape for `SavedProfile` in server/index.js
  - [x] T008 Implement consistent error handling (status codes + JSON body) in server/index.js
 - [ ] T009 [P] Wire basic navigation to Saved Profiles page in src/app/App.tsx
  - [x] T009 [P] Wire basic navigation to Saved Profiles page in src/app/App.tsx
 - [ ] T010 Add `ImageWithFallback` usage pattern available in src/app/components/figma/ImageWithFallback.tsx for grid images in src/app/components/SavedProfiles.tsx
+ - [x] T010 Add `ImageWithFallback` usage pattern available in src/app/components/figma/ImageWithFallback.tsx for grid images in src/app/components/SavedProfiles.tsx
 
 **Checkpoint**: Foundation ready — user story implementation can begin in parallel
 
@@ -59,6 +61,11 @@
 - [ ] T013 [US1] Implement save action (POST /api/saved-profiles) with validation and success toast in src/app/components/DogProfile.tsx
 - [ ] T014 [US1] Implement unsave action (DELETE /api/saved-profiles/{id}) and success toast in src/app/components/DogProfile.tsx
 - [ ] T015 [US1] Add loading states and error messaging per Constitution in src/app/components/DogProfile.tsx
+ - [x] T012 [P] [US1] Implement existence check (GET /api/saved-profiles/exists) to determine button label in src/app/services/api.ts
+ - [x] T013 [US1] Implement save action (POST /api/saved-profiles) with validation and success toast in src/app/components/DogProfile.tsx
+ - [x] T014 [US1] Implement unsave action (DELETE /api/saved-profiles/{id}) and success toast in src/app/components/DogProfile.tsx
+ - [x] T015 [US1] Add loading states and error messaging per Constitution in src/app/components/DogProfile.tsx
+ - [x] T044 [US1] Keep Save/Unsave button on saved profile detail view and flip state after unsave in src/app/components/SavedProfileDetail.tsx
 
 ### Backend for User Story 1
 
@@ -69,7 +76,9 @@
 ### Tests for User Story 1
 
 - [ ] T019 [US1] Unit test: save/exists/unsave handlers in server/index.js (mock Cosmos client)
+ - [x] T019 [US1] Unit test: save/exists/unsave handlers in server/index.js (integration via Supertest)
 - [ ] T020 [US1] Unit test: button toggle logic and error/success feedback in src/app/components/DogProfile.tsx (mock API helpers)
+ - [x] T020 [US1] Unit test: button toggle logic and error/success feedback in src/app/components/DogProfile.tsx (mock API helpers)
 
 **Checkpoint**: User Story 1 fully functional and independently testable
 
@@ -88,6 +97,10 @@
  - [x] T023 [US2] Implement infinite scroll with cursor handling and accessibility fallbacks in src/app/components/SavedProfiles.tsx
  - [x] T024 [US2] Implement empty state UI when no profiles exist in src/app/components/SavedProfiles.tsx
  - [x] T025 [US2] Apply design tokens and `ImageWithFallback` for tiles in src/app/components/SavedProfiles.tsx
+ - [x] T037 [US2] Make saved profile cards navigate to a routed detail view in src/app/components/SavedProfiles.tsx and src/app/App.tsx
+ - [x] T038 [US2] Add routed detail page for a saved profile in src/app/components/SavedProfileDetail.tsx
+ - [x] T039 [US2] Add GET /api/saved-profiles/:id handler in server/index.js and client helper in src/app/services/api.ts
+ - [x] T045 [US2] Add hover state to saved profile cards in src/app/components/SavedProfiles.tsx
 
 ### Backend for User Story 2
 
@@ -95,8 +108,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T027 [US2] Unit test: list handler paging with continuation token in server/index.js (mock Cosmos client)
+- [x] T027 [US2] Unit test: list handler paging with continuation token in server/index.js (mock Cosmos client)
 - [ ] T028 [US2] Unit test: infinite scroll and empty state rendering in src/app/components/SavedProfiles.tsx (mock API helpers)
+ - [x] T028 [US2] Unit test: infinite scroll and empty state rendering in src/app/components/SavedProfiles.tsx (mock API helpers)
+- [x] T040 [US2] Unit test: clicking a saved card routes to detail view in src/app/App.tsx (mock API helpers)
+ - [x] T046 [US2] Unit test: save/unsave toggle on saved profile detail view in src/app/components/SavedProfileDetail.tsx (mock API helpers)
 
 **Checkpoint**: User Story 2 fully functional and independently testable
 
@@ -112,10 +128,12 @@
 
 - [ ] T029 [P] [US3] Add “Saved Tails” header button styled per saved-dogs.md in src/app/App.tsx
 - [ ] T030 [US3] Implement route navigation to Saved Profiles page in src/app/App.tsx
+ - [x] T029 [P] [US3] Add “Saved Tails” header button styled per saved-dogs.md in src/app/App.tsx
+ - [x] T030 [US3] Implement route navigation to Saved Profiles page in src/app/App.tsx
 
 ### Tests for User Story 3
 
-- [ ] T031 [US3] Unit test: navigation action from header to Saved Profiles in src/app/App.tsx
+- [x] T031 [US3] Unit test: navigation action from header to Saved Profiles in src/app/App.tsx
 
 **Checkpoint**: User Story 3 independently testable
 
@@ -125,11 +143,11 @@
 
 **Purpose**: Quality improvements across stories
 
-- [ ] T032 [P] Accessibility review: labels, keyboard focus order, contrast across new flows
-- [ ] T033 Performance checks: action feedback timings; add simple timing logs where helpful
-- [ ] T034 [P] Documentation updates in specs/001-saved-dogs/quickstart.md and AGENTS.md
-- [ ] T035 Code cleanup: extract helpers in api.ts and SavedProfiles.tsx if complexity grows
-- [ ] T036 Security/robustness: validate payloads and sanitize inputs in server/index.js
+- [x] T032 [P] Accessibility review: labels, keyboard focus order, contrast across new flows
+- [x] T033 Performance checks: action feedback timings; add simple timing logs where helpful
+- [x] T034 [P] Documentation updates in specs/001-saved-dogs/quickstart.md and AGENTS.md
+- [x] T035 Code cleanup: extract helpers in api.ts and SavedProfiles.tsx if complexity grows
+- [x] T036 Security/robustness: validate payloads and sanitize inputs in server/index.js
 
 ---
 

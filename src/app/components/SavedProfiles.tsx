@@ -7,15 +7,18 @@ import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 
 type SavedProfilesProps = {
   onNavigateHome?: () => void;
+  onNavigateDetail?: (id: string) => void;
 };
 
-export function SavedProfiles({ onNavigateHome }: SavedProfilesProps) {
+export function SavedProfiles({ onNavigateHome, onNavigateDetail }: SavedProfilesProps) {
   const [items, setItems] = useState<SavedProfile[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const shouldLogTiming = import.meta.env.DEV;
 
   const load = async () => {
+    const start = typeof performance !== "undefined" ? performance.now() : 0;
     setLoading(true);
     const { items: batch, nextCursor } = await listSavedProfiles({
       cursor: cursor ?? undefined,
@@ -24,6 +27,10 @@ export function SavedProfiles({ onNavigateHome }: SavedProfilesProps) {
     setItems((prev) => [...prev, ...batch]);
     setCursor(nextCursor ?? null);
     setLoading(false);
+    if (shouldLogTiming && start) {
+      const elapsed = performance.now() - start;
+      console.debug(`SavedProfiles load: ${elapsed.toFixed(1)}ms`);
+    }
   };
 
   useEffect(() => {
@@ -63,7 +70,7 @@ export function SavedProfiles({ onNavigateHome }: SavedProfilesProps) {
       </header>
 
       {/* Title */}
-      <div className="max-w-6xl mx-auto px-8 pt-16">
+      <div className="max-w-6xl mx-auto px-8 pt-16" aria-busy={loading}>
         <div className="text-center mb-6">
           <h2 className="text-6xl tracking-tight text-amber-950">Saved Tails</h2>
         </div>
@@ -73,21 +80,39 @@ export function SavedProfiles({ onNavigateHome }: SavedProfilesProps) {
 
         {/* Grid */}
         {items.length === 0 && !loading ? (
-          <div className="text-center text-gray-600 py-24">No saved profiles yet.</div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {items.map((p) => (
-              <Card key={p.id} className="rounded-2xl overflow-hidden shadow">
-                <div className="w-full h-[333px] overflow-hidden">
-                  <ImageWithFallback src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="px-6 py-6">
-                  <div className="text-2xl text-gray-900 font-medium">{p.name}</div>
-                  <div className="text-sm text-gray-600">{p.profession}</div>
-                </div>
-              </Card>
-            ))}
+          <div className="text-center text-gray-600 py-24" role="status" aria-live="polite">
+            No saved profiles yet.
           </div>
+        ) : (
+          <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8" aria-label="Saved profiles">
+            {items.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onNavigateDetail && onNavigateDetail(p.id)}
+                className="text-left transition-transform hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
+                aria-label={`Open profile for ${p.name}`}
+              >
+                <Card className="rounded-2xl overflow-hidden shadow hover:shadow-lg transition-shadow h-full">
+                  <div className="w-full h-[333px] overflow-hidden">
+                    <ImageWithFallback src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="px-6 pt-6 pb-8 h-[148px] flex flex-col gap-2">
+                    <div
+                      className="text-2xl text-gray-900 font-medium leading-8 min-h-[64px] overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]"
+                    >
+                      {p.name}
+                    </div>
+                    <div
+                      className="text-sm text-gray-600 leading-5 min-h-[40px] overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]"
+                    >
+                      {p.profession}
+                    </div>
+                  </div>
+                </Card>
+              </button>
+            ))}
+          </section>
         )}
 
         {/* Infinite scroll sentinel */}
@@ -95,9 +120,12 @@ export function SavedProfiles({ onNavigateHome }: SavedProfilesProps) {
 
         {/* Loading */}
         {loading && (
-          <div className="text-center text-gray-600 py-6">Loading more...</div>
+          <div className="text-center text-gray-600 py-6" role="status" aria-live="polite">
+            Loading more...
+          </div>
         )}
       </div>
+
     </div>
   );
 }

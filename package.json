@@ -8,7 +8,8 @@
     "dev": "vite",
     "dev:server": "nodemon server/index.js",
     "dev:all": "concurrently \"npm:dev:server\" \"npm:dev\" --names \"API,APP\" --prefix-colors \"yellow,cyan\"",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "test": "NODE_ENV=test vitest --run"
   },
   "dependencies": {
     "@azure/cosmos": "^4.9.0",
@@ -72,11 +73,16 @@
   "devDependencies": {
     "@azure/openai": "^1.0.0-beta.12",
     "@tailwindcss/vite": "4.1.12",
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/user-event": "^14.5.2",
     "@vitejs/plugin-react": "4.7.0",
     "concurrently": "^8.2.2",
+    "jsdom": "^24.0.0",
     "nodemon": "^3.0.2",
+    "supertest": "^6.3.4",
     "tailwindcss": "4.1.12",
-    "vite": "6.3.5"
+    "vite": "6.3.5",
+    "vitest": "^1.5.0"
   },
   "peerDependencies": {
     "react": "18.3.1",
